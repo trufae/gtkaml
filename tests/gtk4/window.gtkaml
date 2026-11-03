@@ -1,0 +1,4 @@
+<Window gtkaml:public="Gtk4Window" title="GTK4 window"
+        xmlns="Gtk" xmlns:gtkaml="http://gtkaml.org/0.6.0">
+  <Button label="Child"/>
+</Window>

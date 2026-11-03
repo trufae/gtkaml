@@ -1,6 +1,7 @@
 custom_target(
   'example-clutter-full',
   input: 'full-example.gtkon',
+  depend_files: gtkamlc_markup_depends,
   output: 'full-example.vala',
   command: [
     gtkamlc,
@@ -13,6 +14,8 @@ custom_target(
     '--pkg',
     'mx-1.0',
   ] + gtkamlc_markup_args + [
+    '-d',
+    '@OUTDIR@',
     '-V',
     '@INPUT@',
   ],

@@ -222,7 +222,6 @@ class Gtkaml.Compiler {
 		context.save_temps = save_temps;
 		nostdpkg |= fast_vapi_filename != null;
 		context.set_target_profile (Profile.GOBJECT, !nostdpkg);
-		context.add_define ("GOBJECT");
 
 		context.entry_point_name = entry_point;
 
@@ -237,10 +236,6 @@ class Gtkaml.Compiler {
 			}
 		}
 
-		for (int i = 2; i <= 12; i += 2) {
-			context.add_define ("VALA_0_%d".printf (i));
-		}
-
 		//if (context.profile == Profile.GOBJECT) {
 			int glib_major = 2;
 			int glib_minor = 16;
@@ -251,10 +246,6 @@ class Gtkaml.Compiler {
 			context.set_target_glib_version ("%d.%d".printf (glib_major, glib_minor));
 			if (glib_major != 2) {
 				Report.error (null, "This version of valac only supports GLib 2");
-			}
-
-			for (int i = 16; i <= glib_minor; i += 2) {
-				context.add_define ("GLIB_2_%d".printf (i));
 			}
 
 			if (!nostdpkg) {
@@ -549,7 +540,7 @@ class Gtkaml.Compiler {
 		}
 		
 		if (version) {
-			stdout.printf ("Gtkaml %s for Vala 0.12\n", Config.PACKAGE_VERSION);
+			stdout.printf ("Gtkaml %s for Vala %s\n", Config.PACKAGE_VERSION, Config.VALA_VERSION);
 			return 0;
 		}
 		

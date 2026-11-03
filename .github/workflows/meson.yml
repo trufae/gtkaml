@@ -31,9 +31,12 @@ jobs:
       - name: Configure
         run: >
           meson setup build
-          -Dexamples=false
+          -Dexamples=true
           -Dtests=true
           -Dgtk_api=${{ matrix.gtk_api }}
 
       - name: Build
         run: meson compile -C build
+
+      - name: Test compiler
+        run: meson test -C build --print-errorlogs

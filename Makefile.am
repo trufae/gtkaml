@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	INSTALL \
 	examples/SimpleViewer2/Makefile \
 	examples/SimpleViewer2/SimpleViewer2.gtkaml \
+	examples/SimpleViewer2/main.vala \
 	examples/gtkaml/Makefile \
 	examples/gtkaml/gtk-hello.gtkaml \
 	examples/gtkaml/search-dialog.gtkaml \

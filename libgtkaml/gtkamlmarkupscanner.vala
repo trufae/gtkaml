@@ -62,7 +62,8 @@ class Gtkaml.MarkupScanner {
 	
 	public SourceReference get_src () {
 		SourceLocation begin, end;
-		begin = end = SourceLocation (null, (int)node->get_line_no (), 0);
+		begin = SourceLocation (null, (int)node->get_line_no (), 0);
+		end = begin;
 		return new SourceReference (source_file, begin, end);
 	}
 

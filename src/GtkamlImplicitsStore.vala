@@ -61,32 +61,82 @@ private class Gtkaml.KeyFileWrapper : Object {
  */
 public class Gtkaml.ImplicitsStore : Object {
 	private Vala.List<string> implicits_dirs = new ArrayList<string> (str_equal);
+	private Vala.List<string> fallback_dirs = new ArrayList<string> (str_equal);
 	private Vala.Map<string, Vala.List<KeyFileWrapper>> loaded_ns = new HashMap<string, Vala.List<KeyFileWrapper>> (str_hash, str_equal);
 		
 	public Vala.List<string> get_implicits_dirs () {
 		return implicits_dirs;
 	}
 	
-	public void add_implicits_dir (string directory) {
-		implicits_dirs.add (directory);
+	public void add_implicits_dir (string directory, bool fallback = false) {
+		if (fallback) {
+			fallback_dirs.add (directory);
+		} else {
+			implicits_dirs.add (directory);
+		}
 	}
 	
+	private Vala.Map<string, KeyFileWrapper> markup_hints = new HashMap<string, KeyFileWrapper> (str_hash, str_equal);
+
+	public void load_markuphints (CodeContext context) {
+		string[] hint_directories = {};
+		if (context.vapi_directories != null) {
+			foreach (string directory in context.vapi_directories) {
+				hint_directories += directory;
+			}
+		}
+		hint_directories += Path.build_filename (Config.PACKAGE_DATADIR, "markuphints");
+		foreach (string directory in Environment.get_system_data_dirs ()) {
+			hint_directories += Path.build_filename (directory, "gtkaml", "markuphints");
+		}
+		foreach (string package in context.get_packages ()) {
+			string? filename = null;
+			foreach (string directory in hint_directories) {
+				var candidate = Path.build_filename (directory, package + ".markuphints");
+				if (FileUtils.test (candidate, FileTest.IS_REGULAR)) {
+					filename = candidate;
+					break;
+				}
+			}
+			if (filename == null) {
+				continue;
+			}
+			try {
+				var hints = new KeyFile ();
+				hints.load_from_file (filename, KeyFileFlags.NONE);
+				foreach (string group in hints.get_groups ()) {
+					var dot = group.last_index_of_char ('.');
+					if (dot < 0) {
+						continue;
+					}
+					var ns = group.substring (0, dot);
+					var class_name = group.substring (dot + 1);
+					var wrapper = markup_hints.get (ns);
+					if (wrapper == null) {
+						wrapper = new KeyFileWrapper ();
+						markup_hints.set (ns, wrapper);
+					}
+					foreach (string key in hints.get_keys (group)) {
+						wrapper.key_file.set_value (class_name, key, hints.get_value (group, key));
+					}
+				}
+			} catch (Error e) {
+				Report.error (null, "Invalid markuphints file %s: %s".printf (filename, e.message));
+			}
+		}
+	}
+
 	private Vala.List<KeyFileWrapper> get_ns (string ns) {
 		if (loaded_ns.contains (ns)) {
 			return loaded_ns.get (ns);
 		} else {
 			var key_file_list = new Vala.ArrayList<KeyFileWrapper> ();
-			foreach (string implicits_dir in this.implicits_dirs) {
-				var file_name = Path.build_filename (implicits_dir, ns + ".implicits");
-				if (FileUtils.test (file_name, FileTest.EXISTS)) {
-					var key_file_wrapper = new KeyFileWrapper ();
-					try {
-						key_file_wrapper.key_file.load_from_file (file_name, KeyFileFlags.NONE);
-						key_file_list.add (key_file_wrapper);
-					} catch (Error e) {
-						Report.warning (null, "Invalid implicits file %s".printf (file_name));
-					}
-				}
+			load_implicits (ns, implicits_dirs, key_file_list);
+			var hints = markup_hints.get (ns);
+			if (hints != null) {
+				key_file_list.add (hints);
+			} else {
+				load_implicits (ns, fallback_dirs, key_file_list);
 			}
 			//even an empty list does it: so that we don't scan the directories again
 			loaded_ns.set (ns, key_file_list);
@@ -94,6 +144,22 @@ public class Gtkaml.ImplicitsStore : Object {
 		}
 	}
 	
+	private void load_implicits (string ns, Vala.List<string> directories, Vala.List<KeyFileWrapper> files) {
+		foreach (string directory in directories) {
+			var filename = Path.build_filename (directory, ns + ".implicits");
+			if (!FileUtils.test (filename, FileTest.IS_REGULAR)) {
+				continue;
+			}
+			try {
+				var wrapper = new KeyFileWrapper ();
+				wrapper.key_file.load_from_file (filename, KeyFileFlags.NONE);
+				files.add (wrapper);
+			} catch (Error e) {
+				Report.warning (null, "Invalid implicits file %s".printf (filename));
+			}
+		}
+	}
+
 	public Vala.List<string> get_adds (string ns, string class_name) {
 		Vala.List<string> adds = new Vala.ArrayList<string> ();
 		var kf_ns = get_ns (ns);
@@ -116,9 +182,9 @@ public class Gtkaml.ImplicitsStore : Object {
 				var kf_parameters = kfw.get_string_list (class_name, method_name);
 				foreach (string parameter in kf_parameters) {
 					var implicits_parameter = new ImplicitsParameter ();
-					var name_value = parameter.split ("=");
+					var name_value = parameter.split ("=", 2);
 					implicits_parameter.name = name_value[0];
-					implicits_parameter.default_value = name_value[1];//either null or not
+					implicits_parameter.default_value = name_value.length > 1 ? name_value[1] : null;
 					parameters.add (implicits_parameter);
 				}
 				return parameters;

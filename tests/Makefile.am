@@ -13,3 +13,5 @@ TESTS_SUBDIRS += adwaita
 endif
 
 SUBDIRS = $(TESTS_SUBDIRS)
+
+EXTRA_DIST = compile-smoke.py

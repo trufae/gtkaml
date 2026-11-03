@@ -22,6 +22,10 @@
 	</AboutDialog>			
 
 <![CDATA[
+	public SimpleViewer2 () {
+		Object ();
+	}
+
 	private void OnWindow1DeleteEvent () {
 		doCloseApplication ();
 	}
@@ -85,14 +89,5 @@
 		aboutdialog1.run ();
 	}
 
-	static int main (string[] args) {
-		Gtk.init (ref args);
-		var viewer = new SimpleViewer2 ();
-		if (args.length > 1)
-			viewer.loadFile (args[1]);
-		viewer.show_all ();
-		Gtk.main ();
-		return 0;
-	}
 ]]>
 </Window>
