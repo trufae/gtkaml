@@ -33,6 +33,9 @@ AS_IF([test -z "$VALA_VERSION"], [
 ])
 
 PKG_CHECK_MODULES([VALA], [libvala-$VALA_VERSION])
+PKG_CHECK_VAR([VALA_PREFIX], [libvala-$VALA_VERSION], [prefix])
+VALA_VAPIDIR="$VALA_PREFIX/share/vala/vapi"
+AC_SUBST([VALA_VAPIDIR])
 PKG_CHECK_VAR([VALA_BASE_LIBDIR], [libvala-$VALA_VERSION], [libdir])
 VALA_CODEGEN_LIBDIR="$VALA_BASE_LIBDIR/vala-$VALA_VERSION"
 AC_SUBST([VALA_CODEGEN_LIBDIR])
@@ -43,6 +46,9 @@ AC_DEFINE_UNQUOTED([VALA_VERSION], ["$VALA_VERSION"])
 PKG_CHECK_MODULES([GTK3], [gtk+-3.0], [have_gtk3=yes], [have_gtk3=no])
 PKG_CHECK_MODULES([GTK4], [gtk4], [have_gtk4=yes], [have_gtk4=no])
 PKG_CHECK_MODULES([ADWAITA], [libadwaita-1], [have_adwaita=yes], [have_adwaita=no])
+PKG_CHECK_VAR([ADWAITA_PREFIX], [libadwaita-1], [prefix])
+ADWAITA_VAPIDIR="$ADWAITA_PREFIX/share/vala/vapi"
+AC_SUBST([ADWAITA_VAPIDIR])
 AM_CONDITIONAL([HAVE_GTK3], [test x$have_gtk3 = xyes])
 AM_CONDITIONAL([HAVE_GTK4], [test x$have_gtk4 = xyes])
 AM_CONDITIONAL([HAVE_ADWAITA], [test x$have_adwaita = xyes])

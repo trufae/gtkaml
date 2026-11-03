@@ -32,12 +32,12 @@ new.with_label = label
 new.with_mnemonic = label
 
 [Gtk.Container]
-adds=add
+adds=add_with_properties
 
 [Gtk.ScrolledWindow]
-## actually add reffers to Container.add
+## Use the method form of Container.add, which is a signal in the VAPI.
 ## Here we just make it the first to pick by default
-adds = add;add_with_viewport
+adds = add_with_properties;add_with_viewport
 new = hadjustment={null};vadjustment={null}
 
 [Gtk.Box]

@@ -1,11 +1,12 @@
 
 if ENABLE_DOCS
-    VALADOC_COMMAND=$(VALADOC) -o ../valadoc -b $(top_srcdir) --vapidir . --pkg config --pkg libvala-$(VALA_VERSION) --pkg libxml-2.0 --pkg gio-2.0 --force --package-name=Gtkaml --package-version=$(PACKAGE_VERSION) $^
+    VALADOC_COMMAND=$(VALADOC) -o ../valadoc -b $(top_srcdir) --vapidir $(srcdir) --pkg config --pkg libvala-$(VALA_VERSION) --pkg libxml-2.0 --pkg gio-2.0 --force --package-name=Gtkaml --package-version=$(PACKAGE_VERSION) $^
 else
     VALADOC_COMMAND=
 endif
 
 AM_CPPFLAGS = \
+	-I$(top_builddir) \
 	$(GLIB_CFLAGS) \
 	$(GIO_CFLAGS) \
 	$(VALA_CFLAGS) \
@@ -72,7 +73,7 @@ gtkaml-1.0.vapi : gtkaml.vapi
 
 
 libgtkaml.stamp: $(libgtkaml_la_VALASOURCES)
-	$(VALAC) -C $(VALAFLAGS) -H gtkaml.h --library gtkaml --vapidir . --pkg config --pkg glib-2.0 --pkg libvala-$(VALA_VERSION) --pkg libxml-2.0 --pkg gio-2.0 $^
+	$(VALAC) -C $(VALAFLAGS) --vapidir $(VALA_VAPIDIR) -H gtkaml.h --library gtkaml --vapidir $(srcdir) --pkg config --pkg glib-2.0 --pkg libvala-$(VALA_VERSION) --pkg libxml-2.0 --pkg gio-2.0 $^
 	$(VALADOC_COMMAND)
 	touch $@
 

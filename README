@@ -1,11 +1,12 @@
 gtkaml is a Vala markup compiler that turns `.gtkaml` and `.gtkon` files into
 regular Vala/C sources.
 
-This tree has been rebased around the newer `gtkaml3` architecture:
+Source layout:
 
 - `libgtkaml/` contains the parser, AST, resolver and Vala integration.
-- `src/gtkamlcompiler.vala` is the frontend compiler driver.
-- `markuphints/` replaces the old `data/*.implicits` files.
+- `src/GtkamlCompiler.vala` is the frontend compiler driver.
+- `markuphints/` describes package-specific constructors and container APIs.
+  The compiler also accepts legacy `data/*.implicits` hints.
 
 Current focus
 
@@ -23,22 +24,38 @@ Build requirements
 - `libxml-2.0`
 - `libtool`, `autoconf`, `automake` for bootstrap builds
 
-Typical bootstrap:
+Meson build (recommended):
+
+```sh
+meson setup build -Dexamples=true -Dtests=true
+meson compile -C build
+meson test -C build --print-errorlogs
+```
+
+Optional targets use the installed GTK packages by default. Select one stack
+with `-Dgtk_api=gtk3`, `-Dgtk_api=gtk4`, or `-Dgtk_api=adwaita`.
+Examples and tests are disabled by default. Smoke programs are compiled but
+never opened by the tests, so the checks work without a display.
+
+Autotools bootstrap:
 
 ```sh
 autoreconf -fi
-./configure
+./configure --enable-tests
 make
 ```
 
-Examples:
+Examples from an uninstalled Meson build:
 
 ```sh
-./src/gtkamlc --vapidir ./markuphints --pkg gtk+-3.0 examples/gtkaml/gtk-hello.gtkaml
-./src/gtkamlc --vapidir ./markuphints --pkg gtk4 tests/gtk4/smoke.gtkaml
-./src/gtkamlc --vapidir ./markuphints --pkg gtk4 --pkg libadwaita-1 tests/adwaita/smoke.gtkaml
+./build/src/gtkamlc --vapidir ./markuphints --pkg gtk+-3.0 examples/gtkaml/gtk-hello.gtkaml
+./build/src/gtkamlc --vapidir ./markuphints --pkg gtk4 tests/gtk4/smoke.gtkaml
+./build/src/gtkamlc --vapidir ./markuphints --pkg gtk4 --pkg libadwaita-1 tests/adwaita/smoke.gtkaml
 ```
 
-The compiler relies on markuphints to resolve container child APIs. For
-uninstalled builds, keep passing `--vapidir ./markuphints`; after install the
-hints are loaded from `$(pkgdatadir)/markuphints`.
+Use `-V -d OUTPUT_DIRECTORY` to generate Vala sources without compiling them.
+The compiler uses markuphints to resolve constructors and container child APIs.
+For uninstalled builds, pass `--vapidir ./markuphints`; after installation the
+hints are loaded from `$(pkgdatadir)/markuphints`. Explicit `--implicitsdir`
+overrides take precedence over package markuphints. Installed legacy implicits
+are used for namespaces without package markuphints.

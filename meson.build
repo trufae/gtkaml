@@ -63,6 +63,32 @@ gtk3_dep = dependency('gtk+-3.0', required: false)
 gtk4_dep = dependency('gtk4', required: false)
 adwaita_dep = dependency('libadwaita-1', required: false)
 
+gtk_api = get_option('gtk_api')
+build_gtk3_targets = false
+build_gtk4_targets = false
+build_adwaita_targets = false
+
+if gtk_api == 'auto'
+  build_gtk3_targets = gtk3_dep.found()
+  build_gtk4_targets = gtk4_dep.found()
+  build_adwaita_targets = adwaita_dep.found()
+elif gtk_api == 'gtk3'
+  if not gtk3_dep.found()
+    error('gtk_api=gtk3 requires gtk+-3.0 to be installed')
+  endif
+  build_gtk3_targets = true
+elif gtk_api == 'gtk4'
+  if not gtk4_dep.found()
+    error('gtk_api=gtk4 requires gtk4 to be installed')
+  endif
+  build_gtk4_targets = true
+elif gtk_api == 'adwaita'
+  if not gtk4_dep.found() or not adwaita_dep.found()
+    error('gtk_api=adwaita requires both gtk4 and libadwaita-1 to be installed')
+  endif
+  build_adwaita_targets = true
+endif
+
 vala_codegen_libdir = vala_dep.get_variable(pkgconfig: 'libdir') / ('vala-' + vala_version)
 vala_internal_vapi_dir = join_paths(
   vala_dep.get_variable(pkgconfig: 'prefix'),
@@ -74,7 +100,7 @@ valadoc = find_program('valadoc', required: get_option('docs'))
 
 config_data = configuration_data()
 config_data.set_quoted('PACKAGE_VERSION', meson.project_version())
-config_data.set_quoted('PACKAGE_DATADIR', join_paths(get_option('datadir'), meson.project_name()))
+config_data.set_quoted('PACKAGE_DATADIR', get_option('prefix') / get_option('datadir') / meson.project_name())
 config_data.set_quoted('VALA_VERSION', vala_version)
 
 config_h = configure_file(
@@ -102,12 +128,37 @@ common_deps = [
   vala_dep,
 ]
 
+gtkamlc_markup_depends = files(
+  'markuphints/gtk+-3.0.markuphints',
+  'markuphints/gtk4.markuphints',
+  'markuphints/libadwaita-1.markuphints',
+  'markuphints/clutter-1.0.markuphints',
+  'markuphints/stk-1.0.markuphints',
+)
+
+gtkamlc_markup_args = [
+  '--vapidir',
+  meson.project_source_root() / 'markuphints',
+  '--vapidir',
+  vala_internal_vapi_dir,
+]
+
+foreach dep : [gtk3_dep, gtk4_dep, adwaita_dep]
+  if dep.found()
+    gtkamlc_markup_args += ['--vapidir', dep.get_variable(pkgconfig: 'prefix') / 'share/vala/vapi']
+  endif
+endforeach
+
 pkg = import('pkgconfig')
 
 subdir('libgtkaml')
 subdir('src')
 subdir('data')
 subdir('markuphints')
+
+if get_option('examples')
+  subdir('examples')
+endif
 
 if get_option('tests')
   subdir('tests')
@@ -118,9 +169,11 @@ install_man('gtkamlc.1')
 summary({
   'libvala package': vala_pkg_name,
   'libvalaccodegen dir': vala_codegen_libdir,
-  'GTK+ 3 tests': gtk3_dep.found(),
-  'GTK 4 tests': gtk4_dep.found(),
-  'libadwaita tests': adwaita_dep.found(),
+  'selected GTK API': gtk_api,
+  'GTK+ 3 targets': build_gtk3_targets,
+  'GTK 4 targets': build_gtk4_targets,
+  'libadwaita targets': build_adwaita_targets,
+  'build examples': get_option('examples'),
   'build smoke tests': get_option('tests'),
   'build docs target': get_option('docs'),
 }, section: 'gtkaml')

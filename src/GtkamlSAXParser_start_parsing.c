@@ -42,7 +42,9 @@ void gtkaml_sax_parser_error (GtkamlSAXParser * self, char * message, ...) {
 	va_start (args, message);
 	g_vasprintf (&output, message, args);
 	va_end (args);
-	vala_report_error (gtkaml_sax_parser_create_source_reference (self), output);
+	ValaSourceReference *source = gtkaml_sax_parser_create_source_reference (self);
+	vala_report_error (source, "%s", output);
+	vala_source_reference_unref (source);
 	g_free (output);
 	
 	xmlStopParser (self->xmlCtxt);

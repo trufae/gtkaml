@@ -12,6 +12,8 @@ typedef struct _ValaGIRWriter ValaGIRWriter;
 
 GType vala_ccode_compiler_get_type (void) G_GNUC_CONST;
 ValaCCodeCompiler *vala_ccode_compiler_new (void);
+gpointer vala_ccode_compiler_ref (gpointer instance);
+void vala_ccode_compiler_unref (gpointer instance);
 void vala_ccode_compiler_compile (ValaCCodeCompiler *self, ValaCodeContext *context, const gchar *cc_command, gchar **cc_options, gint cc_options_length1);
 
 GType vala_gd_bus_server_module_get_type (void) G_GNUC_CONST;

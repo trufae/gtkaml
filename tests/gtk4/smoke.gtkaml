@@ -1,5 +1,6 @@
 <ApplicationWindow
   gtkaml:public="Gtk4SmokeWindow"
+  application="{null}"
   title="GTK4 Gtkaml Smoke"
   default-width="480"
   default-height="240"

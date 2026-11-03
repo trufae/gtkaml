@@ -32,6 +32,15 @@ public class Gtkaml.Parser : Vala.Parser {
 	private CodeContext context;
 	
 	private ImplicitsStore implicits_store = new ImplicitsStore ();
+
+	private string build_generated_filename (string source_filename, string extension) {
+		var basename = Path.get_basename (source_filename);
+		var dot = basename.last_index_of_char ('.');
+		if (dot != -1) {
+			basename = basename.substring (0, dot);
+		}
+		return Path.build_filename (context.directory, basename + extension);
+	}
 	
 	public Parser () {
 		base ();
@@ -41,12 +50,14 @@ public class Gtkaml.Parser : Vala.Parser {
 		if (implicits_directories != null)
 			foreach (string? implicits_dirs in implicits_directories)
 				implicits_store.add_implicits_dir (implicits_dirs);
+		implicits_store.add_implicits_dir (Path.build_filename (Config.PACKAGE_DATADIR, "implicits"), true);
 		foreach (var datadir in Environment.get_system_data_dirs ()) {
 			var filename = Path.build_filename (datadir, "gtkaml", "implicits");
 			if (FileUtils.test (filename, FileTest.EXISTS)) {  
-				implicits_store.add_implicits_dir (filename);
+				implicits_store.add_implicits_dir (filename, true);
 			}
 		}
+		implicits_store.load_markuphints (context);
 		this.context = context;
 		base.parse( context );
 	}
@@ -55,15 +66,17 @@ public class Gtkaml.Parser : Vala.Parser {
 		if (source_file.filename.has_suffix (".vala") || source_file.filename.has_suffix (".vapi")) {
 			base.visit_source_file (source_file);
 		} else if (source_file.filename.has_suffix (".gtkon")) {
+			source_file.file_type = SourceFileType.FAST;
 			parse_gtkon_file (source_file);
 		} else if (source_file.filename.has_suffix (".gtkaml")) {
+			source_file.file_type = SourceFileType.FAST;
 			parse_gtkaml_file (source_file);
 		}
 	}
 
 public bool use_genie;
 	public void parse_gtkon_file (SourceFile gtkon_source_file) {
-		var gtkaml_filename = gtkon_source_file.filename.replace (".gtkon", ".gtkaml");
+		var gtkaml_filename = build_generated_filename (gtkon_source_file.filename, ".gtkaml");
 		var gp = new GtkonParser ();
 		gp.use_genie (use_genie);
 		gp.parse_file (gtkon_source_file.filename);
@@ -95,11 +108,14 @@ public bool use_genie;
 					
 					string vala_contents =  code_generator.yield ();
 					if (vala_contents != null) { 
-						string vala_filename = gtkaml_source_file.filename.substring (0, 
-							gtkaml_source_file.filename.length - ".gtkaml".length) + ".vala";
+						string vala_filename = build_generated_filename (gtkaml_source_file.filename, ".vala");
 						FileUtils.set_contents (vala_filename, vala_contents);
 						context.generated_files.add (vala_filename);
-						base.visit_source_file (new SourceFile (context, SourceFileType.FAST, vala_filename));
+						var generated_source_file = new SourceFile (context, SourceFileType.SOURCE, vala_filename);
+						var glib_using = new UsingDirective (new UnresolvedSymbol (null, "GLib"));
+						generated_source_file.add_using_directive (glib_using);
+						context.root.add_using_directive (glib_using);
+						context.add_source_file (generated_source_file);
 					}
 				}
 			} catch (FileError e) {

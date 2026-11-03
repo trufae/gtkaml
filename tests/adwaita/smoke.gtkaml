@@ -1,5 +1,6 @@
 <ApplicationWindow
   gtkaml:public="AdwSmokeWindow"
+  application="{null}"
   title="Adwaita Gtkaml Smoke"
   default-width="560"
   default-height="320"
